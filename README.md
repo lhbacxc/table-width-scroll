@@ -2,15 +2,20 @@
 
 一个独立的 Obsidian 表格插件：拖动调整列宽，表格可见区域始终限制在笔记正文宽度内，超出部分通过底部横向滚动条查看。支持阅读视图和编辑模式的实时预览（Live Preview）。
 
+## 功能参考与改进
+
+本插件参考了 **Gridlock Tables** 的手动列宽调整功能，以及 **Table Style Tweaks** 的表格横向滚动功能，并做了以下改进：
+
+- 将列宽调整和横向滚动整合到一个插件中。
+- 表格可见区域默认与笔记正文等宽，超出部分在表格内部滚动查看。
+- 在实时预览和阅读视图中提供一致的操作，并共用保存的列宽。
+- 拖动时保持其他列的宽度，支持取消调整、重启恢复和重置默认布局。
+
 ## 安装
 
-1. 先停用 Gridlock Tables 和 Table Style Tweaks，避免它们的表格宽度与突破正文宽度的样式相互影响。
-2. 下载并解压 [安装包 ZIP](./dist/table-width-scroll-0.1.0.zip)。
-3. 将解压出的整个 `table-width-scroll` 文件夹复制到你的 Obsidian 仓库的 `.obsidian/plugins/` 下。
-4. 检查 `.obsidian/plugins/table-width-scroll/` 中直接包含 `main.js`、`manifest.json` 和 `styles.css`，避免多套一层文件夹；保留随包提供的许可证文件。
-5. 重新启动 Obsidian，或重新加载第三方插件列表，在「设置 → 第三方插件」中启用 **Table Width Scroll**。
-
-也可以直接复制 `./dist/table-width-scroll/` 文件夹完成安装。
+1. 从 Releases 下载并解压 [安装包 ZIP](https://github.com/lhbacxc/table-width-scroll/releases/download/0.1.0/table-width-scroll-0.1.0.zip)。
+2. 将解压出的 `table-width-scroll` 文件夹复制到 Obsidian 仓库的 `.obsidian/plugins/` 下。文件夹内直接包含 `main.js`、`manifest.json` 和 `styles.css`，避免多套一层文件夹。
+3. 重新启动 Obsidian，或重新加载第三方插件列表，在「设置 → 第三方插件」中启用 **Table Width Scroll**。
 
 最低声明版本：Obsidian 1.14.4。实际使用的主题与其他表格插件组合，请按照 `./docs/verification.md` 中的操作清单验收。
 
@@ -65,12 +70,10 @@ npm run package
 
 生产源码位于 `./src/`，设计及模块职责见 `./docs/design.md`，测试证据和真实应用验收范围见 `./docs/verification.md`。安装包中不包含测试工具或 Node.js 依赖。
 
-## 许可证与参考实现
-
-MIT。表格源码定位和原生组件增强方式参考 Gridlock Tables，滚动容器方式参考 Table Style Tweaks。版权声明与派生范围见 `./LICENSE` 和 `./THIRD_PARTY_NOTICES.md`。
-
 ## 源码仓库
 
 https://github.com/lhbacxc/table-width-scroll
 
 仓库根目录直接对应本插件目录，包含源码、构建配置、测试、中文文档和可安装文件。
+
+作者：[Lhbacxc](https://github.com/lhbacxc/table-width-scroll)。

@@ -9,7 +9,7 @@
 | TypeScript 严格编译及生产打包 | 通过 | `npm run build`，产物为 `../main.js` |
 | 数据逻辑测试 | 9 项通过 | `../tests/data.test.ts`：源码定位、稳定表格标识、列宽校验、恢复、改名与删除 |
 | Chrome 浏览器功能测试 | 18 项通过 | `../tests/layout.spec.ts`：运行实际插件源码，Obsidian 接口使用测试替身，CodeMirror 使用真实模块 |
-| 安装目录与 ZIP 打包 | 通过 | `npm run package`，安装包位于 `../dist/`，保留 MIT 许可证与第三方声明 |
+| 安装目录与 ZIP 打包 | 通过 | `npm run package`，安装包位于 `../dist/`，只包含三个运行文件，MIT 文本嵌入 `main.js` |
 | Codegraph MCP 查询 | 通过 | 新插件的 `TableWidthScrollPlugin`、`LiveTables` 及关联源码可查询 |
 
 浏览器测试覆盖：
@@ -40,6 +40,14 @@
 6. 编辑中的嵌套 CodeMirror 使用 `pre-wrap` 保留空白并换行，不把其编辑文本按普通 HTML 空白规则折叠。
 7. Windows 下全量 `codegraph index` 受 MCP 已打开的数据库文件锁阻止；改用 `codegraph sync`，并通过 MCP 查询确认新代码已被索引。
 8. Windows PowerShell 5.1 解析含中文的无 BOM 脚本时发生语法错误。`../scripts/package.ps1` 已使用带 BOM 的 UTF-8 编码保存；控制台编码仍显式设置 UTF-8，之后打包通过。
+
+## 本地安装包调整
+
+- `manifest.json` 的作者固定为 `Lhbacxc`，链接为 https://github.com/lhbacxc/table-width-scroll，指向本插件仓库，后续版本继续沿用。
+- README 的安装步骤直接从下载并解压 ZIP 开始；单独介绍两个参考插件的功能和本插件的改进。
+- 安装目录和 ZIP 只保留 `main.js`、`manifest.json`、`styles.css`。源码目录的两个版权文件继续保留，完整 MIT 文本随构建嵌入 `main.js`。
+- 重新打包先验证运行文件和清理路径，移除旧安装目录的残留文件，再创建当前版本临时 ZIP 并清理旧版本 ZIP。ZIP 不纳入 Git；确认 Releases 上传成功后删除本地 ZIP。
+- 本地查阅后的修改按用户要求同步到远端，并发布 `0.1.0` Release；Release 上传附件仅为当前 ZIP，说明见 `./releases/0.1.0.md`。
 
 ## 真实 Obsidian 验收范围
 

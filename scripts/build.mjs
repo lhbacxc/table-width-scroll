@@ -1,5 +1,8 @@
 import * as esbuild from 'esbuild';
 import { builtinModules } from 'node:module';
+import { readFile } from 'node:fs/promises';
+
+const license = await readFile(new URL('../LICENSE', import.meta.url), 'utf8');
 
 const options = {
   entryPoints: ['src/main.ts'],
@@ -9,7 +12,7 @@ const options = {
   target: 'es2021',
   external: ['obsidian', 'electron', '@codemirror/state', '@codemirror/view', ...builtinModules],
   outfile: 'main.js',
-  banner: { js: '/*! Table Width Scroll | MIT | Includes adaptations of Gridlock Tables (c) 2026 Michael Sciscenti. See LICENSE and THIRD_PARTY_NOTICES.md. */' },
+  banner: { js: `/*! Table Width Scroll\n${license.trim()}\n*/` },
   minify: !process.argv.includes('--watch'),
   logLevel: 'info',
 };
