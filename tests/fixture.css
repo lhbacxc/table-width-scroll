@@ -1,0 +1,22 @@
+/* 布局基线模拟 Obsidian 1.15.0 的原生表格 CSS，非完整应用样式。 */
+:root {
+  --file-line-width: 560px; --size-4-4: 16px; --table-column-min-width: 6ch;
+  --size-2-2: 4px; --size-4-2: 8px; --interactive-accent: #526bd7;
+  --background-secondary: #eceef2; --scrollbar-thumb-bg: #7b849699;
+  font: 16px Arial, sans-serif;
+}
+body { margin: 0; background: #fafafa; color: #222; }
+.pane { width: 1100px; margin: 0 auto; padding: 16px; box-sizing: border-box; }
+.markdown-preview-view { padding: 16px; }
+.markdown-preview-view.is-readable-line-width .markdown-preview-sizer { max-width: var(--file-line-width); margin-inline: auto; }
+.markdown-source-view .cm-editor { width: 100%; }
+.markdown-source-view .cm-scroller { overflow: auto; padding: 16px; }
+.markdown-source-view > .cm-editor > .cm-scroller > .cm-content { flex: none; width: var(--file-line-width); max-width: 100%; margin-inline: auto; box-sizing: border-box; }
+.markdown-rendered table, table { border-collapse: collapse; margin: 1em 0; font: 16px Arial, sans-serif; }
+th, td { border: 1px solid #ccd1d9; padding: 4px 8px; }
+th { background: #e9edf4; text-align: left; }
+.markdown-source-view.mod-cm6 .cm-table-widget { --table-drag-handle-size: var(--size-4-4); padding: var(--table-drag-handle-size); margin: 0 calc(-1 * var(--size-4-4)) !important; overflow-x: auto; overflow-y: hidden; }
+.markdown-source-view.mod-cm6 .cm-table-widget .table-wrapper { position: relative; width: fit-content; }
+.markdown-source-view.mod-cm6 .cm-table-widget tr { height: 1px; }
+.markdown-source-view.mod-cm6 .cm-table-widget th, .markdown-source-view.mod-cm6 .cm-table-widget td { height: inherit; min-width: var(--table-column-min-width); cursor: text; overflow: visible; padding: 0; position: relative; }
+.markdown-source-view.mod-cm6 .cm-table-widget .table-cell-wrapper { height: 100%; padding: var(--size-2-2) var(--size-4-2); }

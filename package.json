@@ -1,0 +1,31 @@
+{
+  "name": "table-width-scroll",
+  "version": "0.1.0",
+  "description": "Obsidian 表格列宽调整与正文宽度内的横向滚动",
+  "type": "module",
+  "main": "main.js",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lhbacxc/table-width-scroll.git"
+  },
+  "homepage": "https://github.com/lhbacxc/table-width-scroll#readme",
+  "bugs": { "url": "https://github.com/lhbacxc/table-width-scroll/issues" },
+  "scripts": {
+    "build": "tsc --noEmit && node scripts/build.mjs",
+    "dev": "node scripts/build.mjs --watch",
+    "test": "vitest run",
+    "test:browser": "playwright test",
+    "package": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/package.ps1"
+  },
+  "devDependencies": {
+    "@codemirror/state": "6.7.6",
+    "@codemirror/view": "6.43.13",
+    "@playwright/test": "^1.56.1",
+    "@types/node": "^22.15.17",
+    "esbuild": "0.25.5",
+    "obsidian": "1.14.4",
+    "typescript": "^5.8.3",
+    "vitest": "^2.1.9"
+  }
+}

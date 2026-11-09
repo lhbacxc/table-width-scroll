@@ -1,0 +1,87 @@
+/* 仅作用于本插件装饰的表格。保留 Obsidian 的正文宽度约束。 */
+body.tws-enabled .tws-scroll {
+  box-sizing: border-box;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  overflow-x: scroll !important;
+  overflow-y: hidden !important;
+  overscroll-behavior-x: contain;
+  scrollbar-width: auto;
+  scrollbar-color: var(--scrollbar-thumb-bg, #8888) var(--background-secondary, #eee);
+}
+
+/* 原生 widget 有左右负边距和 padding；去掉它们使滚动边界对齐正文。 */
+body.tws-enabled .markdown-source-view.mod-cm6 .cm-table-widget.tws-scroll {
+  margin-inline: 0 !important;
+  padding-inline: 0 !important;
+}
+
+body.tws-enabled .tws-inner {
+  width: var(--tws-width, 100%) !important;
+  min-width: var(--tws-min-width, 0ch) !important;
+  max-width: none !important;
+}
+
+body.tws-enabled table.tws-table {
+  table-layout: fixed !important;
+  width: var(--tws-width, 100%) !important;
+  min-width: var(--tws-min-width, 0ch) !important;
+  max-width: none !important;
+  margin-inline: 0 !important;
+  border-spacing: 0;
+}
+
+body.tws-enabled table.tws-table > colgroup.tws-colgroup > col {
+  width: var(--tws-col-width) !important;
+}
+
+body.tws-enabled table.tws-table > :is(thead, tbody, tfoot) > tr > :is(th, td) {
+  position: relative;
+  min-width: 0 !important;
+  max-width: none !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+}
+
+/* 实时预览单元格里的原生 CodeMirror 也要按拖动后的宽度换行。 */
+body.tws-enabled table.tws-table .table-cell-wrapper {
+  min-width: 0 !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+}
+
+body.tws-enabled table.tws-table .cm-content {
+  min-width: 0 !important;
+  white-space: pre-wrap !important;
+  overflow-wrap: anywhere !important;
+}
+
+body.tws-enabled table.tws-table .tws-resize-handle {
+  position: absolute;
+  inset-block: 0;
+  right: 0;
+  width: 0.5rem;
+  z-index: 4;
+  cursor: col-resize;
+  touch-action: none;
+  user-select: none;
+  pointer-events: auto;
+  border-right: 2px solid transparent;
+  box-sizing: border-box;
+}
+
+body.tws-enabled table.tws-table .tws-resize-handle:is(:hover, :focus-visible, .is-active) {
+  border-color: var(--interactive-accent, #5475c7);
+  background: var(--background-modifier-hover, #8882);
+}
+
+body.tws-enabled.is-mobile table.tws-table .tws-resize-handle { width: 1rem; }
+body.tws-enabled .tws-scroll.tws-dragging { user-select: none; cursor: col-resize; }
+body.tws-enabled .tws-scroll::-webkit-scrollbar { height: 12px; }
+body.tws-enabled .tws-scroll::-webkit-scrollbar-track { background: var(--background-secondary, #eee); }
+body.tws-enabled .tws-scroll::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb-bg, #8888);
+  border: 3px solid var(--background-secondary, #eee);
+  border-radius: 8px;
+}

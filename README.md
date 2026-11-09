@@ -1,0 +1,76 @@
+# Table Width Scroll
+
+一个独立的 Obsidian 表格插件：拖动调整列宽，表格可见区域始终限制在笔记正文宽度内，超出部分通过底部横向滚动条查看。支持阅读视图和编辑模式的实时预览（Live Preview）。
+
+## 安装
+
+1. 先停用 Gridlock Tables 和 Table Style Tweaks，避免它们的表格宽度与突破正文宽度的样式相互影响。
+2. 下载并解压 [安装包 ZIP](./dist/table-width-scroll-0.1.0.zip)。
+3. 将解压出的整个 `table-width-scroll` 文件夹复制到你的 Obsidian 仓库的 `.obsidian/plugins/` 下。
+4. 检查 `.obsidian/plugins/table-width-scroll/` 中直接包含 `main.js`、`manifest.json` 和 `styles.css`，避免多套一层文件夹；保留随包提供的许可证文件。
+5. 重新启动 Obsidian，或重新加载第三方插件列表，在「设置 → 第三方插件」中启用 **Table Width Scroll**。
+
+也可以直接复制 `./dist/table-width-scroll/` 文件夹完成安装。
+
+最低声明版本：Obsidian 1.14.4。实际使用的主题与其他表格插件组合，请按照 `./docs/verification.md` 中的操作清单验收。
+
+## 使用
+
+- 默认表格按正文宽度等分各列。很多列的表格保留每列至少 6ch 的默认宽度，通过滚动查看更多列。
+- 将鼠标移动到表头右侧或任意行的列边界，拖动调整列宽。拖动一个列边界时，其余列保持原宽度。
+- 超出正文的内容隐藏在表格滚动容器内。使用底部滚动条、触控板或触屏横向滑动查看。
+- 点击单元格仍可使用 Obsidian 原生表格编辑功能。
+- 两种视图共用保存的列宽；重启和组件重新渲染后恢复。
+- 双击表头的调整手柄，恢复当前表格的默认布局。
+- 手柄可以通过 Tab 聚焦。左右方向键以 1ch 调整列宽，Shift + 方向键以 5ch 调整，Home 重置当前表格。
+- 拖动期间按 Escape，或发生指针取消事件、窗口失焦、组件移除时，撤销这次未完成的调整。
+- 命令面板中的「Table Width Scroll: 重置所有表格列宽」清除全部保存记录。
+
+「编辑模式」需要开启实时预览。源码模式显示 Markdown 文本，不显示可拖动的表格网格。
+
+## 正文宽度与保存规则
+
+插件不写死笔记宽度，也不扩大笔记正文容器。开启「缩减栏宽 / Readable line length」时，表格的可见区域跟随正文栏宽；关闭时跟随正文实际占用的宽度。内部表格在手动调宽后可以比可见区域更宽。
+
+列宽以相对字体单位 `ch` 保存在 `.obsidian/plugins/table-width-scroll/data.json` 中，不改写 Markdown 笔记。列宽下限为 4ch，上限为 300ch。
+
+表格记录以笔记路径、源表头和相同表头的出现次数定位。普通正文修改、插入不同表头的表格，以及文件或文件夹改名后可继续恢复。更换表头或列数会使用默认布局；交换相同表头的表格顺序后需要重新调整。复制笔记到新的路径不会继承原笔记的列宽记录。
+
+当前处理普通的顶层 Markdown 表格。引用、列表内嵌套表格和自定义 HTML 合并单元格不在本版的验证范围内。
+
+## 设置
+
+插件设置页提供全局启用开关。要在一篇笔记中停用，在属性中设置：
+
+```yaml
+cssclasses:
+  - tws-off
+```
+
+## 开发与验证
+
+在本文件所在目录使用 PowerShell 运行：
+
+```powershell
+npm ci
+npm run build
+npm test
+npm run test:browser
+npm run package
+```
+
+工程使用 Node.js，无 Python 或 Conda 依赖。Obsidian 与 CodeMirror 在编译时作为外部模块，运行时使用 Obsidian 自带的实现。
+
+浏览器测试默认寻找本机 Chrome 或 Edge。如安装位置不同，可在运行测试前设置 `$env:TWS_BROWSER_PATH` 为浏览器可执行文件路径。
+
+生产源码位于 `./src/`，设计及模块职责见 `./docs/design.md`，测试证据和真实应用验收范围见 `./docs/verification.md`。安装包中不包含测试工具或 Node.js 依赖。
+
+## 许可证与参考实现
+
+MIT。表格源码定位和原生组件增强方式参考 Gridlock Tables，滚动容器方式参考 Table Style Tweaks。版权声明与派生范围见 `./LICENSE` 和 `./THIRD_PARTY_NOTICES.md`。
+
+## 源码仓库
+
+https://github.com/lhbacxc/table-width-scroll
+
+仓库根目录直接对应本插件目录，包含源码、构建配置、测试、中文文档和可安装文件。
