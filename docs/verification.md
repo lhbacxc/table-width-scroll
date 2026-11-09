@@ -46,7 +46,7 @@
 - `manifest.json` 的作者固定为 `Lhbacxc`，链接为 https://github.com/lhbacxc/table-width-scroll，指向本插件仓库，后续版本继续沿用。
 - README 的安装步骤直接从下载并解压 ZIP 开始；单独介绍两个参考插件的功能和本插件的改进。
 - 安装目录和 ZIP 只保留 `main.js`、`manifest.json`、`styles.css`。源码目录的两个版权文件继续保留，完整 MIT 文本随构建嵌入 `main.js`。
-- 重新打包先验证运行文件和清理路径，移除旧安装目录的残留文件，再创建当前版本临时 ZIP 并清理旧版本 ZIP。ZIP 不纳入 Git；确认 Releases 上传成功后删除本地 ZIP。
+- 重新打包先验证运行文件和清理路径，移除旧安装目录的残留文件，再创建当前版本 ZIP 并清理旧版本 ZIP。ZIP 保留在本地，通过 Git 忽略规则排除；远端只将压缩安装包上传到 Releases。
 - 本地查阅后的修改按用户要求同步到远端，并发布 `0.1.0` Release；Release 上传附件仅为当前 ZIP，说明见 `./releases/0.1.0.md`。
 
 ## 真实 Obsidian 验收范围
