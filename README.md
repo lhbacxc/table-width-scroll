@@ -70,6 +70,8 @@ npm run package
 
 生产源码位于 `./src/`，设计及模块职责见 `./docs/design.md`，测试证据和真实应用验收范围见 `./docs/verification.md`。安装包中不包含测试工具或 Node.js 依赖。
 
+开发前阅读[项目入门指南](./docs/onboarding.md)和[维护约束](./AGENTS.md)，了解数据流、修改位置及打包前的构建要求。
+
 ## 源码仓库
 
 https://github.com/lhbacxc/table-width-scroll
