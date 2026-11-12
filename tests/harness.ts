@@ -2,7 +2,7 @@ import { EditorState, StateEffect, StateField } from '@codemirror/state';
 import { Decoration, DecorationSet, EditorView, WidgetType } from '@codemirror/view';
 import TableWidthScrollPlugin from '../src/main';
 import { splitRow, tablesIn } from '../src/tableIdentity';
-import { MarkdownView, editorInfoField, filePath, runtime } from './mockObsidian';
+import { MarkdownView, Menu, editorInfoField, filePath, runtime } from './mockObsidian';
 
 const DEFAULT_NOTE = '# 表格测试\n\n| 项目 | 内容 | 说明 |\n| --- | --- | --- |\n| Alpha | 中文内容与普通文本 | 说明文字 |\n| Beta | 长文本可换行 | https://example.com/very-long-link |\n';
 const events = new Map<string, Set<(...args: any[]) => void>>();
@@ -13,6 +13,7 @@ let reading: MarkdownView;
 let sourceView: MarkdownView;
 let path = '测试.md';
 let optOut = false;
+let activeMode = 'live';
 const rewidget = StateEffect.define<null>();
 
 function tableDOM(doc: Document, source: string, line: number, live: boolean): HTMLTableElement {
@@ -30,6 +31,40 @@ function tableDOM(doc: Document, source: string, line: number, live: boolean): H
   const body = table.createTBody();
   for (let i = line + 2; i < lines.length && lines[i]?.includes('|') && lines[i]?.trim(); i++) {
     append(body.insertRow(), splitRow(lines[i]!), false);
+  }
+  if (live) {
+    const addHandle = (cell: HTMLTableCellElement, axis: 'col' | 'row') => {
+      const handle = doc.createElement('div'); handle.className = `table-${axis}-drag-handle`;
+      handle.setAttribute('aria-label', axis === 'col' ? '选择整列' : '选择整行');
+      handle.addEventListener('pointerdown', evt => {
+        if (evt.button !== 0) return;
+        evt.preventDefault();
+        if (axis === 'col') {
+          (window as any).nativeColumnSelections = ((window as any).nativeColumnSelections ?? 0) + 1;
+          Array.from(table.rows).forEach(row => row.cells[cell.cellIndex]?.classList.add('is-selected'));
+        }
+      });
+      handle.addEventListener('contextmenu', evt => {
+        const menu = Menu.forEvent(evt);
+        (window as any).nativeMenu = menu;
+        (window as any).nativeShowOriginal = Menu.prototype.showAtMouseEvent;
+        if (axis === 'col') menu.addItem(item => item.setTitle('按列升序 (A-Z)'));
+        menu.addItem(item => item.setTitle(axis === 'col' ? '在左侧新增列' : '在上方新增行'));
+        menu.addItem(item => item.setTitle(axis === 'col' ? '向右移动列' : '向下移动行'));
+        menu.addItem(item => item.setTitle(axis === 'col' ? '删除列' : '删除行').onClick(() => { (window as any).nativeMenuAction = axis; }));
+        menu.showAtMouseEvent(evt);
+        menu.onHide(() => table.querySelectorAll('.is-selected').forEach(cell => cell.classList.remove('is-selected')));
+      });
+      cell.append(handle);
+    };
+    Array.from(head.cells).forEach(cell => addHandle(cell, 'col'));
+    Array.from(table.rows).forEach(row => addHandle(row.cells[0]!, 'row'));
+    table.addEventListener('contextmenu', evt => {
+      if (evt.defaultPrevented) return;
+      const menu = new Menu(); menu.addItem(item => item.setTitle('原生单元格操作'));
+      events.get('editor-menu')?.forEach(fn => fn(menu, {}, { file: { path } }));
+      menu.showAtMouseEvent(evt); evt.preventDefault();
+    });
   }
   return table;
 }
@@ -100,6 +135,7 @@ async function boot(options: { note?: string; saved?: any; filename?: string; op
   const app = {
     workspace: {
       iterateAllLeaves: (fn: any) => [reading, sourceView].forEach(view => fn({ view })),
+      getActiveViewOfType: () => activeMode === 'reading' ? reading : sourceView,
       onLayoutReady: (fn: any) => fn(), on,
     },
     vault: { on },
@@ -111,6 +147,7 @@ async function boot(options: { note?: string; saved?: any; filename?: string; op
     parent: sourceView.containerEl,
   });
   (window as any).nativePointerDowns = 0;
+  (window as any).nativeColumnSelections = 0;
   sourceView.containerEl.addEventListener('pointerdown', () => { (window as any).nativePointerDowns++; });
   await new Promise(resolve => setTimeout(resolve, 100));
 }
@@ -129,6 +166,15 @@ async function boot(options: { note?: string; saved?: any; filename?: string; op
   reset: () => runtime.commands[0].callback(),
   resetFreezes: () => runtime.commands.find(command => command.id === 'reset-frozen-columns').callback(),
   defaultFreeze: (count: number) => plugin.setDefaultFrozenColumns(count),
+  freezeValue: (mode: string, index = 0) => {
+    const table = document.querySelectorAll(`#${mode} table`)[index]!;
+    const count = plugin.freezes.override(table.getAttribute('data-tws-key')!);
+    return count === undefined ? 'default' : String(count);
+  },
+  commandFreeze: (mode = 'live') => {
+    activeMode = mode;
+    return runtime.commands.find(command => command.id === 'set-frozen-columns').checkCallback(false);
+  },
   startCellEditor: () => {
     const parent = sourceView.containerEl.querySelector<HTMLElement>('tbody td .table-cell-wrapper')!;
     const doc = parent.textContent ?? '';

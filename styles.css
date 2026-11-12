@@ -87,37 +87,6 @@ body.tws-enabled .tws-scroll::-webkit-scrollbar-thumb {
   border-radius: 8px;
 }
 
-/* 控件在原生单元格之外，横向滚动时仍留在可见区域。 */
-body.tws-enabled .tws-freeze-toolbar {
-  position: sticky;
-  left: 0;
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.5em;
-  width: max-content;
-  max-width: 100%;
-  box-sizing: border-box;
-  padding: 4px 0;
-  z-index: 6;
-  font-size: var(--font-ui-smaller, 12px);
-  color: var(--text-muted, #555);
-  background-color: var(--background-primary, #fff);
-}
-
-body.tws-enabled .tws-freeze-toolbar label {
-  display: flex;
-  align-items: center;
-  gap: 0.4em;
-}
-
-body.tws-enabled .tws-freeze-select {
-  max-width: 100%;
-  font: inherit;
-}
-
-body.tws-enabled .tws-freeze-status { font-size: 0.9em; }
-body.tws-enabled .tws-freeze-status:empty { display: none; }
 body.tws-enabled .tws-scroll { isolation: isolate; }
 
 /* 原生节点继续拥有编辑器和事件；只改变定位与绘制。 */

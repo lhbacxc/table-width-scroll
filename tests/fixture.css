@@ -20,3 +20,10 @@ th { background: #e9edf4; text-align: left; }
 .markdown-source-view.mod-cm6 .cm-table-widget tr { height: 1px; }
 .markdown-source-view.mod-cm6 .cm-table-widget th, .markdown-source-view.mod-cm6 .cm-table-widget td { height: inherit; min-width: var(--table-column-min-width); cursor: text; overflow: visible; padding: 0; position: relative; }
 .markdown-source-view.mod-cm6 .cm-table-widget .table-cell-wrapper { height: 100%; padding: var(--size-2-2) var(--size-4-2); }
+
+/* 原生六点手柄的位置取自本机 Obsidian 1.15.0，测试选择区域不能被遮挡。 */
+.table-col-drag-handle, .table-row-drag-handle { position: absolute; cursor: grab; opacity: 0; background: #ddd; }
+.table-col-drag-handle { bottom: 100%; width: 100%; height: 14px; }
+.table-row-drag-handle { top: 0; right: 100%; width: 14px; height: 100%; }
+.table-col-drag-handle:hover, .table-row-drag-handle:hover { opacity: 1; }
+.table-col-drag-handle::before, .table-row-drag-handle::before { content: '⠿'; display: block; text-align: center; }

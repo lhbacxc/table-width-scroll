@@ -10,7 +10,7 @@ Table Width Scroll 是独立的 Obsidian 插件，为普通 Markdown 表格提�
 
 | 工作区目录 | 用途 | 声明的应用兼容性 |
 | --- | --- | --- |
-| `./table-width-scroll/` | 当前开发工程，独立 Git 仓库，版本 0.2.0 | Obsidian ≥1.14.4，允许移动端加载 |
+| `./table-width-scroll/` | 当前开发工程，独立 Git 仓库，版本 0.2.1 | Obsidian ≥1.14.4，允许移动端加载 |
 | `./gridlock-tables-master/` | 列宽调整、原生组件增强的参考源码，版本 0.1.2 | Obsidian ≥1.14.4，允许移动端加载 |
 | `./table-style-tweaks-master/` | 容器滚动及表格样式的参考源码，版本 1.0.1 | Obsidian ≥1.8.7，仅桌面端 |
 
@@ -53,6 +53,7 @@ flowchart LR
 5. 松开指针后校验并保存，按表格标识刷新其他分栏。`persist()` 在调用时快照数据并串行 saveData，失败时记录错误并显示 Notice。取消手势恢复已保存状态。
 6. `./src/freezeStore.ts` 区分全局默认、每表覆盖和显式不冻结；`./src/freezeDom.ts` 在原生单元格上应用 sticky，并按实际列宽计算偏移。窗口空间不足时暂时减少生效列数，不改保存值。
 7. 原生 widget 重建时，`LiveTables` 跟踪已装饰节点并释放脱离 DOM 的冻结观察器；卸载时同时清理存活和已移除的表格。
+8. `./src/freezeMenu.ts` 接入原生行、列和普通单元格菜单，提供阅读视图右键和命令入口。只适配当前菜单实例的显示及卸载方法，保留原生项目、选择和关闭回调。
 
 ## 关键入口与修改位置
 
@@ -65,13 +66,15 @@ flowchart LR
 | 表格解析与稳定标识 | `./src/tableIdentity.ts` |
 | 列宽限制、数据校验、文件与目录改名迁移 | `./src/widthStore.ts` |
 | 全局冻结默认、每表覆盖、校验与路径迁移 | `./src/freezeStore.ts` |
-| 冻结控件、单元格偏移、尺寸变化与清理 | `./src/freezeDom.ts` |
+| 冻结单元格偏移、尺寸变化与清理 | `./src/freezeDom.ts` |
+| 原生菜单、阅读右键、冻结选择弹窗与命令 | `./src/freezeMenu.ts` |
 | 正文约束、滚动及手柄样式 | `./styles.css` |
 | 生产打包、外部模块、许可证注入 | `./scripts/build.mjs` |
 | 三文件安装目录与 ZIP | `./scripts/package.ps1` |
 | 插件 ID、作者、版本与最低宿主版本 | `./manifest.json`，同时核对 `./package.json` |
 | 数据单元测试 | `./tests/data.test.ts` |
 | 冻结数据语义、显示、字节不变和生命周期 | `./tests/freezeStore.test.ts`、`./tests/freeze.spec.ts` |
+| 六点选择、原生菜单保留、显示时序和弹窗清理 | `./tests/freezeMenu.spec.ts`；`./tests/mockObsidian.ts` 模拟单槽 onHide 和显示后不能 addItem 的约束 |
 | 布局、交互、视图和生命周期测试 | `./tests/layout.spec.ts`；`./tests/harness.ts`、`./tests/mockObsidian.ts` 提供模拟宿主 |
 
 `./docs/` 保存设计、入门、验收及 Release 说明；`./dist/table-width-scroll/` 是可安装目录。`./tests/.generated/`、测试报告及 node_modules 是生成内容，ZIP 留在本地并被 Git 忽略。插件根目录的 `./main.js` 与安装目录内的三个运行文件已被 Git 跟踪，源码变更后需要核对产物差异。
@@ -84,7 +87,7 @@ flowchart LR
 - 冻结默认值为 1，旧数据直接兼容；冻结列数最多为总列数减一，空间不足时为滚动区域保留至少 48px 或可见宽度 20%。data.json 的 defaultFrozenColumns 和 frozenColumns 与旧 widths 字段并存。
 - 增强原生组件，保留单元格编辑权；观察子节点变化并合并到动画帧，装饰必须幂等。关闭、重置、销毁和卸载时先取消未完成手势，再清理自身 DOM、事件与观察器。
 - 样式使用 tws 前缀，通过 `body.tws-enabled` 和所属视图控制作用域，笔记可用 tws-off 停用。兼容性变动需同时验证阅读视图与 Live Preview。
-- 新插件提交描述使用中文；本轮在 feature/frozen-columns 分支开发，用户随后要求先手动验收本地 0.2.0 包，暂不推送 GitHub。尚不能从现有历史确定通用的分支命名和 PR 合并约定。参考副本的 Git 历史不可用。
+- 新插件提交描述使用中文；本轮在 feature/frozen-columns 分支开发，用户已手动反馈 0.2.0，当前菜单版 0.2.1 继续保留本地，全部完善后再推送 GitHub。尚不能从现有历史确定通用的分支命名和 PR 合并约定。参考副本的 Git 历史不可用。
 - 新插件未配置 GitHub Actions、lint 脚本或覆盖率命令。Gridlock 参考副本配置了构建、lint、单元测试及标签发布工作流，Table Style Tweaks 配置了标签发布工作流；这些配置不适用于新插件的自动发布。
 
 ## 常见任务与验证

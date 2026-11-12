@@ -1,7 +1,7 @@
 {
   "id": "table-width-scroll",
   "name": "Table Width Scroll",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "minAppVersion": "1.14.4",
   "description": "调整表格列宽、冻结前几列，在正文宽度内横向滚动，支持实时预览和阅读视图。",
   "author": "Lhbacxc",

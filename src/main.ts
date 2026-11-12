@@ -5,6 +5,7 @@ import { ENABLED, stripAll, stripTable } from './tableDom';
 import { identityAt, tableKey, tablesIn } from './tableIdentity';
 import { WidthStore } from './widthStore';
 import { FreezeStore } from './freezeStore';
+import { FreezeMenus } from './freezeMenu';
 
 class TableCleanup extends MarkdownRenderChild {
   constructor(el: HTMLElement, private readonly table: HTMLTableElement) { super(el); }
@@ -16,6 +17,7 @@ export default class TableWidthScrollPlugin extends Plugin {
   store = new WidthStore();
   freezes = new FreezeStore();
   private controller!: ResizeController;
+  private menus!: FreezeMenus;
   private readonly editors = new Set<LiveTables>();
   private readonly documents = new Set<Document>();
   private saves: Promise<void> = Promise.resolve();
@@ -34,7 +36,14 @@ export default class TableWidthScrollPlugin extends Plugin {
       persist: () => this.persist(),
       forEachRoot: callback => this.forEachRoot(callback),
     });
+    this.menus = new FreezeMenus({
+      app: this.app, freezes: this.freezes,
+      enabled: () => this.enabled && !this.unloading,
+      activeRoot: () => this.app.workspace.getActiveViewOfType(MarkdownView)?.containerEl ?? null,
+      setCount: (table, count) => this.controller.setFrozenColumns(table, count),
+    });
     this.listenDocument(document);
+    this.registerEvent(this.app.workspace.on('editor-menu', (menu, _editor, info) => this.menus.onEditorMenu(menu, info.file?.path)));
     this.registerEvent(this.app.workspace.on('window-open', win => this.listenDocument(win.doc)));
     this.registerMarkdownPostProcessor((el, ctx) => {
       const classes = (ctx.frontmatter as { cssclasses?: unknown } | undefined)?.cssclasses;
@@ -75,9 +84,18 @@ export default class TableWidthScrollPlugin extends Plugin {
         new Notice('所有表格冻结列已恢复全局默认');
       },
     });
+    this.addCommand({
+      id: 'set-frozen-columns', name: '设置当前表格冻结列',
+      checkCallback: checking => {
+        if (!this.menus.hasTables()) return false;
+        if (!checking) this.menus.openForActiveView();
+        return true;
+      },
+    });
     this.app.workspace.onLayoutReady(() => { if (!this.unloading) this.refreshViews(); });
     this.register(() => {
       this.unloading = true;
+      this.menus.dispose();
       this.controller.dispose();
       this.forEachRoot(root => stripAll(root));
       this.documents.forEach(doc => doc.body.classList.remove(ENABLED));
@@ -90,6 +108,7 @@ export default class TableWidthScrollPlugin extends Plugin {
     this.documents.add(doc);
     doc.body.classList.toggle(ENABLED, this.enabled);
     this.controller.bindDocument(doc);
+    this.menus.bindDocument(doc);
   }
 
   private forEachRoot(callback: (root: HTMLElement) => void): void {
@@ -113,10 +132,11 @@ export default class TableWidthScrollPlugin extends Plugin {
     this.persist();
     this.documents.forEach(doc => doc.body.classList.toggle(ENABLED, enabled));
     if (!enabled) {
+      this.menus.dispose();
       this.controller.dispose();
       this.forEachRoot(root => stripAll(root));
       this.documents.forEach(doc => this.controller.bindDocument(doc));
-    }
+    } else this.documents.forEach(doc => this.menus.bindDocument(doc));
     this.refreshViews();
   }
 
@@ -150,7 +170,7 @@ class TableWidthScrollSettings extends PluginSettingTab {
     new Setting(this.containerEl).setName('恢复默认列宽')
       .setDesc('双击任意表头的调整手柄，或聚焦手柄后按 Home，可重置当前表格。命令面板支持重置所有表格。');
     new Setting(this.containerEl).setName('默认冻结前几列')
-      .setDesc('默认 1 列，0 表示不冻结。每张表顶部可单独选择；空间不足时暂时减少生效数量，不改变保存值。')
+      .setDesc('默认 1 列，0 表示不冻结。每张表通过右键菜单或命令面板单独选择；空间不足时暂时减少生效数量。')
       .addText(text => text.setValue(String(this.plugin.freezes.defaultCount)).onChange(value => {
         if (/^\d+$/.test(value)) this.plugin.setDefaultFrozenColumns(Number(value));
       }));

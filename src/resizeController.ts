@@ -46,14 +46,6 @@ export class ResizeController {
     const widths = this.drag?.table === table ? this.drag.current : this.host.store.get(key, headers(table).length);
     decorate(table, key, widths, {
       count: this.host.freezes.get(key, headers(table).length),
-      defaultCount: this.host.freezes.defaultCount,
-      override: this.host.freezes.override(key),
-      onChange: count => {
-        this.cancel();
-        this.host.freezes.set(key, count);
-        this.host.persist();
-        this.refresh(key);
-      },
     });
     if (fresh && table.isConnected) {
       const wrapper = scrollContainer(table);
@@ -83,6 +75,7 @@ export class ResizeController {
 
   private handleAt(evt: PointerEvent): HTMLElement | null {
     const target = elementOf(evt.target);
+    if (target?.closest('.table-col-drag-handle,.table-row-drag-handle,.table-col-btn,.table-row-btn')) return null;
     const direct = target?.closest<HTMLElement>(`.${HANDLE}`);
     if (direct) return direct;
     if (evt.pointerType !== 'mouse') return null;
@@ -159,6 +152,7 @@ export class ResizeController {
 
   private swallow: EventListener = (evt): void => {
     const target = elementOf(evt.target);
+    if (target?.closest('.table-col-drag-handle,.table-row-drag-handle,.table-col-btn,.table-row-btn')) return;
     if (target?.closest(`.${HANDLE}`) ||
       ((evt as MouseEvent).detail > 0 && target && this.suppressedTable?.contains(target))) {
       evt.stopImmediatePropagation();
@@ -198,6 +192,15 @@ export class ResizeController {
 
   private save(key: string, widths: number[]): void {
     this.host.store.set(key, widths);
+    this.host.persist();
+    this.refresh(key);
+  }
+
+  setFrozenColumns(table: HTMLTableElement, count: number | undefined): void {
+    const key = table.getAttribute(KEY);
+    if (!key || !table.isConnected || !activeTable(table)) return;
+    this.cancel();
+    this.host.freezes.set(key, count);
     this.host.persist();
     this.refresh(key);
   }
