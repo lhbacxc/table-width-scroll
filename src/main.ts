@@ -4,6 +4,7 @@ import { ResizeController } from './resizeController';
 import { ENABLED, stripAll, stripTable } from './tableDom';
 import { identityAt, tableKey, tablesIn } from './tableIdentity';
 import { WidthStore } from './widthStore';
+import { FreezeStore } from './freezeStore';
 
 class TableCleanup extends MarkdownRenderChild {
   constructor(el: HTMLElement, private readonly table: HTMLTableElement) { super(el); }
@@ -13,6 +14,7 @@ class TableCleanup extends MarkdownRenderChild {
 export default class TableWidthScrollPlugin extends Plugin {
   enabled = true;
   store = new WidthStore();
+  freezes = new FreezeStore();
   private controller!: ResizeController;
   private readonly editors = new Set<LiveTables>();
   private readonly documents = new Set<Document>();
@@ -20,11 +22,15 @@ export default class TableWidthScrollPlugin extends Plugin {
   private unloading = false;
 
   async onload(): Promise<void> {
-    const raw = await this.loadData() as { enabled?: unknown; widths?: unknown } | null;
+    const raw = await this.loadData() as {
+      enabled?: unknown; widths?: unknown; defaultFrozenColumns?: unknown; frozenColumns?: unknown;
+    } | null;
     this.enabled = raw?.enabled !== false;
     this.store = new WidthStore(raw?.widths);
+    this.freezes = new FreezeStore(raw?.defaultFrozenColumns, raw?.frozenColumns);
     this.controller = new ResizeController({
       store: this.store,
+      freezes: this.freezes,
       persist: () => this.persist(),
       forEachRoot: callback => this.forEachRoot(callback),
     });
@@ -47,14 +53,27 @@ export default class TableWidthScrollPlugin extends Plugin {
     this.registerEvent(this.app.vault.on('rename', (file, oldPath) => {
       this.controller.cancel();
       this.store.rename(oldPath, file.path);
+      this.freezes.rename(oldPath, file.path);
       this.persist();
       this.refreshViews();
     }));
-    this.registerEvent(this.app.vault.on('delete', file => { this.store.rename(file.path, null); this.persist(); }));
+    this.registerEvent(this.app.vault.on('delete', file => {
+      this.controller.cancel();
+      this.store.rename(file.path, null);
+      this.freezes.rename(file.path, null);
+      this.persist();
+    }));
     this.addSettingTab(new TableWidthScrollSettings(this.app, this));
     this.addCommand({
       id: 'reset-column-widths', name: '重置所有表格列宽',
       callback: () => { this.controller.cancel(); this.store.clear(); this.persist(); this.controller.refresh(); new Notice('已恢复所有表格默认列宽'); },
+    });
+    this.addCommand({
+      id: 'reset-frozen-columns', name: '所有表格冻结列恢复全局默认',
+      callback: () => {
+        this.controller.cancel(); this.freezes.clear(); this.persist(); this.controller.refresh();
+        new Notice('所有表格冻结列已恢复全局默认');
+      },
     });
     this.app.workspace.onLayoutReady(() => { if (!this.unloading) this.refreshViews(); });
     this.register(() => {
@@ -79,10 +98,13 @@ export default class TableWidthScrollPlugin extends Plugin {
 
   /** 保存串行执行，并在调用时快照，避免较慢的旧写入覆盖新列宽。 */
   persist(): void {
-    const snapshot = { enabled: this.enabled, widths: this.store.toJSON() };
+    const snapshot = {
+      enabled: this.enabled, widths: this.store.toJSON(),
+      defaultFrozenColumns: this.freezes.defaultCount, frozenColumns: this.freezes.toJSON(),
+    };
     this.saves = this.saves.then(() => this.saveData(snapshot)).catch((error: unknown) => {
-      console.error('Table Width Scroll: 保存列宽失败', error);
-      if (!this.unloading) new Notice('表格列宽保存失败，请检查仓库是否可写');
+      console.error('Table Width Scroll: 保存表格设置失败', error);
+      if (!this.unloading) new Notice('表格设置保存失败，请检查仓库是否可写');
     });
   }
 
@@ -96,6 +118,13 @@ export default class TableWidthScrollPlugin extends Plugin {
       this.documents.forEach(doc => this.controller.bindDocument(doc));
     }
     this.refreshViews();
+  }
+
+  setDefaultFrozenColumns(count: number): void {
+    this.controller.cancel();
+    this.freezes.setDefault(count);
+    this.persist();
+    this.controller.refresh();
   }
 
   private refreshViews(): void {
@@ -120,6 +149,11 @@ class TableWidthScrollSettings extends PluginSettingTab {
       .addToggle(toggle => toggle.setValue(this.plugin.enabled).onChange(value => this.plugin.setEnabled(value)));
     new Setting(this.containerEl).setName('恢复默认列宽')
       .setDesc('双击任意表头的调整手柄，或聚焦手柄后按 Home，可重置当前表格。命令面板支持重置所有表格。');
+    new Setting(this.containerEl).setName('默认冻结前几列')
+      .setDesc('默认 1 列，0 表示不冻结。每张表顶部可单独选择；空间不足时暂时减少生效数量，不改变保存值。')
+      .addText(text => text.setValue(String(this.plugin.freezes.defaultCount)).onChange(value => {
+        if (/^\d+$/.test(value)) this.plugin.setDefaultFrozenColumns(Number(value));
+      }));
     new Setting(this.containerEl).setName('仅在特定笔记停用')
       .setDesc('在笔记属性 cssclasses 中加入 tws-off。');
   }

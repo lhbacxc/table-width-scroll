@@ -1,9 +1,9 @@
 {
   "id": "table-width-scroll",
   "name": "Table Width Scroll",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "minAppVersion": "1.14.4",
-  "description": "调整表格列宽，在笔记正文宽度内横向滚动，支持实时预览和阅读视图。",
+  "description": "调整表格列宽、冻结前几列，在正文宽度内横向滚动，支持实时预览和阅读视图。",
   "author": "Lhbacxc",
   "authorUrl": "https://github.com/lhbacxc/table-width-scroll",
   "isDesktopOnly": false

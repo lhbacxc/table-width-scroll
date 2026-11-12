@@ -1,4 +1,5 @@
 import { DEFAULT_MIN_CH, clampCh } from './widthStore';
+import { FreezeOptions, decorateFrozen, stripFrozen, updateFrozen } from './freezeDom';
 
 export const ENABLED = 'tws-enabled';
 export const KEY = 'data-tws-key';
@@ -32,7 +33,7 @@ export function activeTable(table: HTMLTableElement): boolean {
     !!view && !view.classList.contains('tws-off');
 }
 
-export function decorate(table: HTMLTableElement, key: string, widths?: number[]): void {
+export function decorate(table: HTMLTableElement, key: string, widths?: number[], freezing?: FreezeOptions): void {
   const cells = headers(table);
   if (!cells.length || cells.some(cell => cell.colSpan !== 1)) return;
   let meta = decorations.get(table);
@@ -72,6 +73,7 @@ export function decorate(table: HTMLTableElement, key: string, widths?: number[]
     }
   });
   applyWidths(table, widths);
+  if (freezing) decorateFrozen(table, meta.wrapper, freezing);
 }
 
 function variable(el: HTMLElement, name: string, value: string | undefined): void {
@@ -92,7 +94,7 @@ export function applyWidths(table: HTMLTableElement, widths?: number[]): void {
   const pinned = !!valid;
   if (table.classList.contains('tws-pinned') !== pinned) table.classList.toggle('tws-pinned', pinned);
   let group = table.querySelector<HTMLTableColElement>(`:scope > colgroup.${GROUP}`);
-  if (!valid) { group?.remove(); return; }
+  if (!valid) { group?.remove(); updateFrozen(table); return; }
   if (!group || group.children.length !== count) {
     group?.remove();
     group = table.ownerDocument.createElement('colgroup');
@@ -104,6 +106,7 @@ export function applyWidths(table: HTMLTableElement, widths?: number[]): void {
     variable(col as HTMLElement, '--tws-col-width', `${valid[i]}ch`);
     headers(table)[i]?.querySelector(`:scope > .${HANDLE}`)?.setAttribute('aria-valuenow', String(valid[i]));
   });
+  updateFrozen(table);
 }
 
 /** ch 的真实像素宽度随主题字体变化；测量的是表格使用的字体。 */
@@ -124,6 +127,7 @@ export function measuredWidths(table: HTMLTableElement): number[] {
 }
 
 export function stripTable(table: HTMLTableElement): void {
+  stripFrozen(table);
   const meta = decorations.get(table);
   table.querySelectorAll(`.${HANDLE}, colgroup.${GROUP}`).forEach(el => el.remove());
   table.classList.remove(TABLE, 'tws-pinned');

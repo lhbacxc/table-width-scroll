@@ -28,6 +28,8 @@
 - TypeScript 严格模式，沿用 camelCase 文件名、PascalCase 类型名、两空格缩进和单引号。纯数据逻辑保持独立于 Obsidian。
 - 增强原生表格和 CodeMirror widget，保留原生单元格编辑；阅读视图与 Live Preview 共用标识及列宽记录。
 - 可见区域跟随正文宽度，超出部分在表格内部滚动；列宽以 ch 保存在插件 data.json，不改写 Markdown。
+- 冻结列也保存在插件 data.json：默认首列，允许每表覆盖前 N 列；显式 0 与跟随默认不同。宽度重置和冻结重置保持独立，路径迁移同时处理两种记录。
+- 冻结不复制或替换原生单元格；相关实现与验收范围见 `./docs/frozen-columns.md`。widget 移除后释放 ResizeObserver，不能只清理仍在 DOM 内的表格。
 - 表格标识由路径、解析后的表头、相同表头出现次数组成。修改标识或存储逻辑时，核对恢复、文件及目录改名、删除和列数变化测试。
 - DOM 装饰保持幂等，样式通过 body.tws-enabled 与所属视图限定作用域，支持 tws-off；关闭、销毁、重置或卸载前先取消未完成手势，再清理自身资源。
 - 保存时先快照，再串行 saveData，避免旧写入覆盖新数据；失败使用 Notice 与日志反馈。

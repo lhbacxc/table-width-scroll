@@ -50,5 +50,9 @@ export class Setting {
     const toggle = { setValue: () => toggle, onChange: () => toggle };
     fn(toggle); return this;
   }
+  addText(fn: any): this {
+    const text = { setValue: () => text, onChange: () => text };
+    fn(text); return this;
+  }
 }
 export class App {}

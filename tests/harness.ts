@@ -8,6 +8,7 @@ const DEFAULT_NOTE = '# 表格测试\n\n| 项目 | 内容 | 说明 |\n| --- | --
 const events = new Map<string, Set<(...args: any[]) => void>>();
 let plugin: TableWidthScrollPlugin;
 let editor: EditorView | undefined;
+let cellEditor: EditorView | undefined;
 let reading: MarkdownView;
 let sourceView: MarkdownView;
 let path = '测试.md';
@@ -84,6 +85,7 @@ function renderReading(): void {
 }
 
 async function boot(options: { note?: string; saved?: any; filename?: string; optOut?: boolean } = {}): Promise<void> {
+  cellEditor?.destroy(); cellEditor = undefined;
   if (plugin) { plugin.unload(); editor?.destroy(); }
   runtime.saved = options.saved ?? null;
   events.clear();
@@ -125,6 +127,15 @@ async function boot(options: { note?: string; saved?: any; filename?: string; op
   unload: () => { plugin.unload(); editor?.destroy(); editor = undefined; },
   toggle: (enabled: boolean) => plugin.setEnabled(enabled),
   reset: () => runtime.commands[0].callback(),
+  resetFreezes: () => runtime.commands.find(command => command.id === 'reset-frozen-columns').callback(),
+  defaultFreeze: (count: number) => plugin.setDefaultFrozenColumns(count),
+  startCellEditor: () => {
+    const parent = sourceView.containerEl.querySelector<HTMLElement>('tbody td .table-cell-wrapper')!;
+    const doc = parent.textContent ?? '';
+    parent.replaceChildren();
+    cellEditor = new EditorView({ state: EditorState.create({ doc, extensions: [EditorView.lineWrapping] }), parent });
+    cellEditor.focus();
+  },
   source: () => editor?.state.doc.toString(),
   defaultNote: DEFAULT_NOTE,
   emit: (name: string, ...args: any[]) => events.get(name)?.forEach(fn => fn(...args)),

@@ -14,6 +14,7 @@ export class LiveTables implements PluginValue {
   private readonly observer: MutationObserver;
   private frame: number | undefined;
   private cache: { doc: Text; tables: TableIdentity[] } | undefined;
+  private readonly decorated = new Set<HTMLTableElement>();
 
   constructor(
     private readonly view: EditorView,
@@ -41,11 +42,19 @@ export class LiveTables implements PluginValue {
 
   private decorate(): void {
     this.controller.cancelDetached();
+    // widget 重建会移除旧节点；在它们脱离 DOM 时释放尺寸观察器和控件。
+    for (const table of this.decorated) {
+      if (!this.view.contentDOM.contains(table)) {
+        stripTable(table);
+        this.decorated.delete(table);
+      }
+    }
     const ownView = this.view.dom.closest('.markdown-source-view');
     const path = this.view.state.field(editorInfoField, false)?.file?.path;
     if (!this.enabled() || ownView?.classList.contains('tws-off') || !path) {
       this.controller.cancelIn(this.view.contentDOM);
       stripAll(this.view.contentDOM);
+      this.decorated.clear();
       return;
     }
     const doc = this.view.state.doc;
@@ -59,8 +68,13 @@ export class LiveTables implements PluginValue {
       try {
         const line = doc.lineAt(this.view.posAtDOM(widget)).number - 1;
         const identity = identityAt(this.cache.tables, line);
-        if (identity) this.controller.decorate(table, tableKey(path, identity));
-        else stripTable(table);
+        if (identity) {
+          this.controller.decorate(table, tableKey(path, identity));
+          this.decorated.add(table);
+        } else {
+          stripTable(table);
+          this.decorated.delete(table);
+        }
       } catch { /* 原生组件在编辑时可能暂时不属于文档，下次渲染再处理。 */ }
     }
   }
@@ -70,6 +84,8 @@ export class LiveTables implements PluginValue {
     if (this.frame !== undefined) this.view.dom.ownerDocument.defaultView?.cancelAnimationFrame(this.frame);
     this.editors.delete(this);
     this.controller.cancelIn(this.view.contentDOM);
+    this.decorated.forEach(stripTable);
+    this.decorated.clear();
     stripAll(this.view.contentDOM);
     this.controller.cancelDetached();
   }

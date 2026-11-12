@@ -1,4 +1,6 @@
 import { WidthStore, clampCh } from './widthStore';
+import { FreezeStore } from './freezeStore';
+import { FROZEN } from './freezeDom';
 import {
   HANDLE, KEY, TABLE, activeTable, applyWidths, chPixels, decorate,
   headers, measuredWidths, scrollContainer,
@@ -6,6 +8,7 @@ import {
 
 export interface ResizeHost {
   store: WidthStore;
+  freezes: FreezeStore;
   persist(): void;
   forEachRoot(callback: (root: HTMLElement) => void): void;
 }
@@ -21,6 +24,7 @@ interface Drag {
   base: number[];
   current: number[];
   moved: boolean;
+  frozen: boolean;
 }
 const elementOf = (target: EventTarget | null): HTMLElement | null => {
   const node = target as Node | null;
@@ -40,7 +44,17 @@ export class ResizeController {
     this.cancelDetached();
     const fresh = !table.hasAttribute(KEY);
     const widths = this.drag?.table === table ? this.drag.current : this.host.store.get(key, headers(table).length);
-    decorate(table, key, widths);
+    decorate(table, key, widths, {
+      count: this.host.freezes.get(key, headers(table).length),
+      defaultCount: this.host.freezes.defaultCount,
+      override: this.host.freezes.override(key),
+      onChange: count => {
+        this.cancel();
+        this.host.freezes.set(key, count);
+        this.host.persist();
+        this.refresh(key);
+      },
+    });
     if (fresh && table.isConnected) {
       const wrapper = scrollContainer(table);
       if (wrapper) wrapper.scrollLeft = this.scrollPositions.get(key) ?? 0;
@@ -75,7 +89,14 @@ export class ResizeController {
     const cell = target?.closest('th,td');
     const table = cell?.closest('table');
     if (!table || !activeTable(table)) return null;
-    const index = headers(table).findIndex(header => Math.abs(header.getBoundingClientRect().right - evt.clientX) <= 5);
+    const bounds = scrollContainer(table)?.getBoundingClientRect();
+    const cells = headers(table);
+    const frozenRight = cells.filter(header => header.classList.contains(FROZEN)).slice(-1)[0]?.getBoundingClientRect().right ?? -Infinity;
+    const index = cells.findIndex(header => {
+      const right = header.getBoundingClientRect().right;
+      return Math.abs(right - evt.clientX) <= 5 && (!bounds || right >= bounds.left && right <= bounds.right + 1) &&
+        (header.classList.contains(FROZEN) || right > frozenRight + 1);
+    });
     return index < 0 ? null : headers(table)[index]?.querySelector(`:scope > .${HANDLE}`) ?? null;
   }
 
@@ -95,6 +116,7 @@ export class ResizeController {
       table, handle, key, column, pointer: evt.pointerId, x: evt.clientX,
       scroll: scrollContainer(table)?.scrollLeft ?? 0,
       unit: chPixels(table), base, current: [...base], moved: false,
+      frozen: handle.parentElement?.classList.contains(FROZEN) ?? false,
     };
     this.suppressedTable = table;
     handle.classList.add('is-active');
@@ -106,7 +128,8 @@ export class ResizeController {
     const drag = this.drag;
     if (!drag || drag.pointer !== evt.pointerId) return;
     if (!drag.table.isConnected) { this.finish(false); return; }
-    const delta = evt.clientX - drag.x + (scrollContainer(drag.table)?.scrollLeft ?? 0) - drag.scroll;
+    const scrollDelta = drag.frozen ? 0 : (scrollContainer(drag.table)?.scrollLeft ?? 0) - drag.scroll;
+    const delta = evt.clientX - drag.x + scrollDelta;
     if (!drag.moved && Math.abs(delta) < 3) return;
     evt.preventDefault();
     evt.stopImmediatePropagation();
@@ -183,7 +206,7 @@ export class ResizeController {
     this.host.forEachRoot(root => root.querySelectorAll<HTMLTableElement>(`table.${TABLE}`).forEach(table => {
       const ownKey = table.getAttribute(KEY);
       if (ownKey && (!key || key === ownKey) && this.drag?.table !== table) {
-        applyWidths(table, this.host.store.get(ownKey, headers(table).length));
+        this.decorate(table, ownKey);
       }
     }));
   }

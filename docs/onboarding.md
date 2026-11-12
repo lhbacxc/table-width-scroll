@@ -1,16 +1,16 @@
 # 项目入门指南：Table Width Scroll
 
-核对日期：2026-11-11。本文中的代码路径相对插件根目录；可点击的文档链接相对本文位置。
+核对日期：2026-11-12。本文中的代码路径相对插件根目录；可点击的文档链接相对本文位置。
 
 ## 项目概述与工作区边界
 
-Table Width Scroll 是独立的 Obsidian 插件，为普通 Markdown 表格提供列宽调整与横向滚动。表格可见区域跟随笔记正文宽度，阅读视图和 Live Preview 共用列宽记录，保留原生单元格编辑。
+Table Width Scroll 是独立的 Obsidian 插件，为普通 Markdown 表格提供列宽调整、冻结前 N 列与横向滚动。表格可见区域跟随笔记正文宽度，阅读视图和 Live Preview 共用列宽与冻结记录，保留原生单元格编辑，不改写笔记。
 
 当前上层工作区包含三个工程：
 
 | 工作区目录 | 用途 | 声明的应用兼容性 |
 | --- | --- | --- |
-| `./table-width-scroll/` | 当前开发工程，独立 Git 仓库，版本 0.1.0 | Obsidian ≥1.14.4，允许移动端加载 |
+| `./table-width-scroll/` | 当前开发工程，独立 Git 仓库，版本 0.2.0 | Obsidian ≥1.14.4，允许移动端加载 |
 | `./gridlock-tables-master/` | 列宽调整、原生组件增强的参考源码，版本 0.1.2 | Obsidian ≥1.14.4，允许移动端加载 |
 | `./table-style-tweaks-master/` | 容器滚动及表格样式的参考源码，版本 1.0.1 | Obsidian ≥1.8.7，仅桌面端 |
 
@@ -51,6 +51,8 @@ flowchart LR
 3. `./src/tableIdentity.ts` 跳过 frontmatter 和围栏代码块，用「笔记路径、解析后的表头、相同表头出现次数」生成 JSON 标识；两种视图使用同一规则。
 4. 拖动前记录所有列宽，将像素位移换算为表格字体的 ch 单位，仅修改目标列；`./src/tableDom.ts` 同时设置全部列宽与表格总宽度，CSS 保持外层容器受正文宽度约束。
 5. 松开指针后校验并保存，按表格标识刷新其他分栏。`persist()` 在调用时快照数据并串行 saveData，失败时记录错误并显示 Notice。取消手势恢复已保存状态。
+6. `./src/freezeStore.ts` 区分全局默认、每表覆盖和显式不冻结；`./src/freezeDom.ts` 在原生单元格上应用 sticky，并按实际列宽计算偏移。窗口空间不足时暂时减少生效列数，不改保存值。
+7. 原生 widget 重建时，`LiveTables` 跟踪已装饰节点并释放脱离 DOM 的冻结观察器；卸载时同时清理存活和已移除的表格。
 
 ## 关键入口与修改位置
 
@@ -62,11 +64,14 @@ flowchart LR
 | 滚动容器、手柄、列组、宽度应用与清理 | `./src/tableDom.ts` |
 | 表格解析与稳定标识 | `./src/tableIdentity.ts` |
 | 列宽限制、数据校验、文件与目录改名迁移 | `./src/widthStore.ts` |
+| 全局冻结默认、每表覆盖、校验与路径迁移 | `./src/freezeStore.ts` |
+| 冻结控件、单元格偏移、尺寸变化与清理 | `./src/freezeDom.ts` |
 | 正文约束、滚动及手柄样式 | `./styles.css` |
 | 生产打包、外部模块、许可证注入 | `./scripts/build.mjs` |
 | 三文件安装目录与 ZIP | `./scripts/package.ps1` |
 | 插件 ID、作者、版本与最低宿主版本 | `./manifest.json`，同时核对 `./package.json` |
 | 数据单元测试 | `./tests/data.test.ts` |
+| 冻结数据语义、显示、字节不变和生命周期 | `./tests/freezeStore.test.ts`、`./tests/freeze.spec.ts` |
 | 布局、交互、视图和生命周期测试 | `./tests/layout.spec.ts`；`./tests/harness.ts`、`./tests/mockObsidian.ts` 提供模拟宿主 |
 
 `./docs/` 保存设计、入门、验收及 Release 说明；`./dist/table-width-scroll/` 是可安装目录。`./tests/.generated/`、测试报告及 node_modules 是生成内容，ZIP 留在本地并被 Git 忽略。插件根目录的 `./main.js` 与安装目录内的三个运行文件已被 Git 跟踪，源码变更后需要核对产物差异。
@@ -76,9 +81,10 @@ flowchart LR
 - 文件主要使用 camelCase，类和接口使用 PascalCase；两空格缩进、单引号、分号与当前源码保持一致。TypeScript 开启 strict、noUncheckedIndexedAccess 与 noImplicitReturns。
 - 模块采用直接导入；ResizeController 通过 ResizeHost 接收存储、保存和视图遍历能力。数据解析保持独立于 Obsidian。
 - 列宽以 ch 保存，下限 4ch、上限 300ch，默认每列至少 6ch；不改写 Markdown 笔记。损坏数据被忽略，列数不匹配时恢复默认布局。
+- 冻结默认值为 1，旧数据直接兼容；冻结列数最多为总列数减一，空间不足时为滚动区域保留至少 48px 或可见宽度 20%。data.json 的 defaultFrozenColumns 和 frozenColumns 与旧 widths 字段并存。
 - 增强原生组件，保留单元格编辑权；观察子节点变化并合并到动画帧，装饰必须幂等。关闭、重置、销毁和卸载时先取消未完成手势，再清理自身 DOM、事件与观察器。
 - 样式使用 tws 前缀，通过 `body.tws-enabled` 和所属视图控制作用域，笔记可用 tws-off 停用。兼容性变动需同时验证阅读视图与 Live Preview。
-- 新插件的完整本地历史仅有 3 次提交，均为中文描述；只观察到 main 分支，无法确定分支命名和 PR 合并方式。参考副本的 Git 历史不可用，无法识别约定。
+- 新插件提交描述使用中文；本轮在 feature/frozen-columns 分支开发，用户随后要求先手动验收本地 0.2.0 包，暂不推送 GitHub。尚不能从现有历史确定通用的分支命名和 PR 合并约定。参考副本的 Git 历史不可用。
 - 新插件未配置 GitHub Actions、lint 脚本或覆盖率命令。Gridlock 参考副本配置了构建、lint、单元测试及标签发布工作流，Table Style Tweaks 配置了标签发布工作流；这些配置不适用于新插件的自动发布。
 
 ## 常见任务与验证
@@ -102,7 +108,7 @@ $PSDefaultParameterValues['*:Encoding'] = 'UTF8'
 
 浏览器依次寻找 TWS_BROWSER_PATH、本机 Chrome、Edge；均不存在时使用 Playwright 默认浏览器，需该浏览器已安装。自定义路径可用 `$env:TWS_BROWSER_PATH` 设置。PowerShell 中运行外部命令后，应检查 `$LASTEXITCODE`，非零时停止后续步骤；单独设置 ErrorActionPreference 无法保证原生命令失败即中止。
 
-本轮 `npm run build`、9 项数据测试和 18 项 Chrome 浏览器测试全部通过；现有安装目录和 ZIP 均核对为 main.js、manifest.json、styles.css 三文件，本轮没有重新运行打包。参考工程没有安装本地依赖，未运行其构建与测试。
+最近的验证结果和安装包核对见 `./verification.md`，冻结设计与专项范围见 `./frozen-columns.md`。参考工程未作为本插件依赖，也没有运行其构建或测试。
 
 浏览器测试运行实际插件源码、真实 CodeMirror 和模拟 Obsidian API；不能替代真实应用验收。最低版本和 isDesktopOnly 是 manifest 声明，不代表移动端及所有主题组合已经验收。当前范围是顶层 Markdown 表格；嵌套表格、HTML 合并单元格、同表头表格互换顺序等边界见验收文档。
 
@@ -111,6 +117,7 @@ $PSDefaultParameterValues['*:Encoding'] = 'UTF8'
 - [用户安装与使用说明](../README.md)
 - [项目执行与维护约束](../AGENTS.md)
 - [设计与模块职责](./design.md)
+- [冻结列设计与专项实现](./frozen-columns.md)
 - [测试证据、排障约束与真实应用验收](./verification.md)
 - [人工验收用笔记](./test-note.md)
 - [0.1.0 Release 说明](./releases/0.1.0.md)
