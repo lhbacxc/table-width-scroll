@@ -126,3 +126,4 @@ $PSDefaultParameterValues['*:Encoding'] = 'UTF8'
 - [测试证据、排障约束与真实应用验收](./verification.md)
 - [人工验收用笔记](./test-note.md)
 - [0.1.0 Release 说明](./releases/0.1.0.md)
+- [0.2.2 Release 说明](./releases/0.2.2.md)

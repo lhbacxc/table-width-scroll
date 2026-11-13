@@ -15,7 +15,7 @@
 
 ## 安装
 
-1. 从 [Releases](https://github.com/lhbacxc/table-width-scroll/releases) 下载并解压对应发布版的安装包 ZIP。源码构建的本地 0.2.2 修复包位于 `./dist/table-width-scroll-0.2.2.zip`，本地打包不会自动发布 Release。
+1. 下载并解压 [0.2.2 安装包 ZIP](https://github.com/lhbacxc/table-width-scroll/releases/download/0.2.2/table-width-scroll-0.2.2.zip)，更新内容见 [Release 说明](https://github.com/lhbacxc/table-width-scroll/releases/tag/0.2.2)。
 2. 将解压出的 `table-width-scroll` 文件夹复制到 Obsidian 仓库的 `.obsidian/plugins/` 下。文件夹内直接包含 `main.js`、`manifest.json` 和 `styles.css`，避免多套一层文件夹。
 3. 重新启动 Obsidian，或重新加载第三方插件列表，在「设置 → 第三方插件」中启用 **Table Width Scroll**。
 
