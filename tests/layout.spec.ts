@@ -14,10 +14,12 @@ async function open(page: Page, options: any = {}) {
 async function sizes(page: Page, mode: string) {
   return page.locator(`#${mode} table`).evaluate((table: HTMLTableElement) => {
     const wrapper = table.closest('.tws-scroll') as HTMLElement;
+    const style = getComputedStyle(wrapper);
     return {
       columns: [...table.tHead!.rows[0]!.cells].map(cell => cell.getBoundingClientRect().width),
       table: table.getBoundingClientRect().width,
       wrapper: wrapper.getBoundingClientRect().width,
+      content: wrapper.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight),
       left: wrapper.getBoundingClientRect().left,
       client: wrapper.clientWidth, scroll: wrapper.scrollWidth, scrollLeft: wrapper.scrollLeft,
       outerOverflow: wrapper.closest('.pane')!.scrollWidth > wrapper.closest('.pane')!.clientWidth,
@@ -39,7 +41,8 @@ for (const mode of ['reading', 'live']) {
     await open(page);
     const before = await sizes(page, mode);
     expect(before.wrapper).toBeCloseTo(560, 0);
-    expect(before.table).toBeCloseTo(before.wrapper, 0);
+    // 可见容器包含 Live Preview 原生行手柄区，表格填满剩余正文空间。
+    expect(before.table).toBeCloseTo(before.content, 0);
     await drag(page, mode, 180);
     const after = await sizes(page, mode);
     expect(after.columns[0]! - before.columns[0]!).toBeCloseTo(180, 0);
@@ -108,13 +111,15 @@ test('保存的列宽在组件重建和插件重新加载后恢复', async ({ pa
 });
 
 test('方向键微调，Home 和双击恢复默认宽度', async ({ page }) => {
-  await open(page); await drag(page, 'reading', 160);
+  await open(page);
+  const liveDefault = (await sizes(page, 'live')).table;
+  await drag(page, 'reading', 160);
   const before = await sizes(page, 'reading');
   await page.locator('#reading .tws-resize-handle').first().focus();
   await page.keyboard.press('ArrowRight');
   expect((await sizes(page, 'reading')).columns[0]!).toBeGreaterThan(before.columns[0]!);
   await page.keyboard.press('Home');
-  expect((await sizes(page, 'live')).table).toBeCloseTo(560, 0);
+  expect((await sizes(page, 'live')).table).toBeCloseTo(liveDefault, 0);
   await drag(page, 'live', 120);
   await page.locator('#live .tws-resize-handle').first().dblclick();
   expect((await sizes(page, 'reading')).table).toBeCloseTo(560, 0);
@@ -156,18 +161,21 @@ test('大量列的默认表格保留最小宽度，可以滚动到最后', async
 
 test('组件在拖动时被替换会撤销，不遗留拖动状态', async ({ page }) => {
   await open(page);
+  const defaultWidth = (await sizes(page, 'live')).table;
   const box = (await page.locator('#live .tws-resize-handle').first().boundingBox())!;
   await page.mouse.move(box.x + 3, box.y + 8); await page.mouse.down();
   await page.mouse.move(box.x + 120, box.y + 8);
   await page.evaluate(() => (window as any).harness.rerender());
   await page.waitForTimeout(100); await page.mouse.up();
   await expect(page.locator('.tws-dragging')).toHaveCount(0);
-  expect((await sizes(page, 'live')).table).toBeCloseTo(560, 0);
+  expect((await sizes(page, 'live')).table).toBeCloseTo(defaultWidth, 0);
   expect(await page.evaluate(() => (window as any).harness.saved())).toBeNull();
 });
 
 test('正文编辑保留列宽，表头改变后使用默认宽度', async ({ page }) => {
-  await open(page); await drag(page, 'live', 180);
+  await open(page);
+  const defaultWidth = (await sizes(page, 'live')).table;
+  await drag(page, 'live', 180);
   const width = (await sizes(page, 'live')).table;
   await page.evaluate(() => {
     const h = (window as any).harness;
@@ -180,7 +188,7 @@ test('正文编辑保留列宽，表头改变后使用默认宽度', async ({ pa
     h.update(h.defaultNote.replace('项目', '新表头'));
   });
   await page.waitForTimeout(100);
-  expect((await sizes(page, 'live')).table).toBeCloseTo(560, 0);
+  expect((await sizes(page, 'live')).table).toBeCloseTo(defaultWidth, 0);
 });
 
 test('每笔记停用和保存的停用状态在两种视图都有效', async ({ page }) => {
@@ -205,12 +213,14 @@ test('往左拖可缩窄列宽，表格调整不改写 Markdown 文本', async (
 });
 
 test('重置命令在拖动期间撤销旧手势，不重新保存旧列宽', async ({ page }) => {
-  await open(page); await drag(page, 'live', 160);
+  await open(page);
+  const defaultWidth = (await sizes(page, 'live')).table;
+  await drag(page, 'live', 160);
   const box = (await page.locator('#live .tws-resize-handle').first().boundingBox())!;
   await page.mouse.move(box.x + 3, box.y + 8); await page.mouse.down();
   await page.mouse.move(box.x + 150, box.y + 8);
   await page.evaluate(() => (window as any).harness.reset());
   await page.mouse.up();
-  expect((await sizes(page, 'live')).table).toBeCloseTo(560, 0);
+  expect((await sizes(page, 'live')).table).toBeCloseTo(defaultWidth, 0);
   expect(await page.evaluate(() => (window as any).harness.saved().widths)).toEqual({});
 });

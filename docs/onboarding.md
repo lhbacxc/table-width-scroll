@@ -1,6 +1,6 @@
 # 项目入门指南：Table Width Scroll
 
-核对日期：2026-11-12。本文中的代码路径相对插件根目录；可点击的文档链接相对本文位置。
+核对日期：2026-11-13。本文中的代码路径相对插件根目录；可点击的文档链接相对本文位置。
 
 ## 项目概述与工作区边界
 
@@ -10,7 +10,7 @@ Table Width Scroll 是独立的 Obsidian 插件，为普通 Markdown 表格提�
 
 | 工作区目录 | 用途 | 声明的应用兼容性 |
 | --- | --- | --- |
-| `./table-width-scroll/` | 当前开发工程，独立 Git 仓库，版本 0.2.1 | Obsidian ≥1.14.4，允许移动端加载 |
+| `./table-width-scroll/` | 当前开发工程，独立 Git 仓库，版本 0.2.2（行手柄修复，用户已确认） | Obsidian ≥1.14.4，允许移动端加载 |
 | `./gridlock-tables-master/` | 列宽调整、原生组件增强的参考源码，版本 0.1.2 | Obsidian ≥1.14.4，允许移动端加载 |
 | `./table-style-tweaks-master/` | 容器滚动及表格样式的参考源码，版本 1.0.1 | Obsidian ≥1.8.7，仅桌面端 |
 
@@ -75,6 +75,7 @@ flowchart LR
 | 数据单元测试 | `./tests/data.test.ts` |
 | 冻结数据语义、显示、字节不变和生命周期 | `./tests/freezeStore.test.ts`、`./tests/freeze.spec.ts` |
 | 六点选择、原生菜单保留、显示时序和弹窗清理 | `./tests/freezeMenu.spec.ts`；`./tests/mockObsidian.ts` 模拟单槽 onHide 和显示后不能 addItem 的约束 |
+| 原生行手柄裁剪、真实鼠标悬浮与选择、主题尺寸和留白预算 | `./tests/nativeHandles.spec.ts` |
 | 布局、交互、视图和生命周期测试 | `./tests/layout.spec.ts`；`./tests/harness.ts`、`./tests/mockObsidian.ts` 提供模拟宿主 |
 
 `./docs/` 保存设计、入门、验收及 Release 说明；`./dist/table-width-scroll/` 是可安装目录。`./tests/.generated/`、测试报告及 node_modules 是生成内容，ZIP 留在本地并被 Git 忽略。插件根目录的 `./main.js` 与安装目录内的三个运行文件已被 Git 跟踪，源码变更后需要核对产物差异。
@@ -87,6 +88,7 @@ flowchart LR
 - 冻结默认值为 1，旧数据直接兼容；冻结列数最多为总列数减一，空间不足时为滚动区域保留至少 48px 或可见宽度 20%。data.json 的 defaultFrozenColumns 和 frozenColumns 与旧 widths 字段并存。
 - 增强原生组件，保留单元格编辑权；观察子节点变化并合并到动画帧，装饰必须幂等。关闭、重置、销毁和卸载时先取消未完成手势，再清理自身 DOM、事件与观察器。
 - 样式使用 tws 前缀，通过 `body.tws-enabled` 和所属视图控制作用域，笔记可用 tws-off 停用。兼容性变动需同时验证阅读视图与 Live Preview。
+- Live Preview 的原生行手柄位于首列外侧；滚动容器保留左侧手柄空间并跟随原生尺寸变量。容器仍与正文等宽，默认表格填满扣除留白后的内容区；冻结预算使用这段内容宽度。恢复默认宽度测试应比较对应视图的默认布局，不能将内容宽度写死为正文总宽度。
 - 新插件提交描述使用中文；冻结功能在 feature/frozen-columns 分支开发，用户确认 0.2.1 功能后授权推送，并快进合并到 main。此次合并没有冲突或源码变动，既有测试结果继续适用；不据此推断通用的分支命名和 PR 约定。参考副本的 Git 历史不可用。
 - 新插件未配置 GitHub Actions、lint 脚本或覆盖率命令。Gridlock 参考副本配置了构建、lint、单元测试及标签发布工作流，Table Style Tweaks 配置了标签发布工作流；这些配置不适用于新插件的自动发布。
 

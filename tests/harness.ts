@@ -42,6 +42,9 @@ function tableDOM(doc: Document, source: string, line: number, live: boolean): H
         if (axis === 'col') {
           (window as any).nativeColumnSelections = ((window as any).nativeColumnSelections ?? 0) + 1;
           Array.from(table.rows).forEach(row => row.cells[cell.cellIndex]?.classList.add('is-selected'));
+        } else {
+          (window as any).nativeRowSelections = ((window as any).nativeRowSelections ?? 0) + 1;
+          Array.from((cell.parentElement as HTMLTableRowElement).cells).forEach(cell => cell.classList.add('is-selected'));
         }
       });
       handle.addEventListener('contextmenu', evt => {
@@ -148,6 +151,7 @@ async function boot(options: { note?: string; saved?: any; filename?: string; op
   });
   (window as any).nativePointerDowns = 0;
   (window as any).nativeColumnSelections = 0;
+  (window as any).nativeRowSelections = 0;
   sourceView.containerEl.addEventListener('pointerdown', () => { (window as any).nativePointerDowns++; });
   await new Promise(resolve => setTimeout(resolve, 100));
 }

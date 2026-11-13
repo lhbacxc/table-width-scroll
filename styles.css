@@ -11,10 +11,12 @@ body.tws-enabled .tws-scroll {
   scrollbar-color: var(--scrollbar-thumb-bg, #8888) var(--background-secondary, #eee);
 }
 
-/* 原生 widget 有左右负边距和 padding；去掉它们使滚动边界对齐正文。 */
+/* 消除原生负边距以对齐正文；保留行六点在首列外侧所需的空间。
+   border-box 保持容器等宽，sticky 自身以 padding 内沿为基准，不再叠加偏移。 */
 body.tws-enabled .markdown-source-view.mod-cm6 .cm-table-widget.tws-scroll {
   margin-inline: 0 !important;
-  padding-inline: 0 !important;
+  padding-inline-start: var(--table-drag-handle-size, 16px) !important;
+  padding-inline-end: 0 !important;
 }
 
 body.tws-enabled .tws-inner {
@@ -104,6 +106,17 @@ body.tws-enabled table.tws-table > thead > tr > .tws-frozen-cell {
 
 body.tws-enabled table.tws-table .tws-last-frozen {
   box-shadow: 2px 0 0 var(--table-border-color, #ccd1d9);
+}
+
+/* 冻结首列的背景延伸到行手柄区，避免透明六点下面透出滚动列文字。 */
+body.tws-enabled .cm-table-widget.tws-scroll table.tws-table > :is(thead, tbody, tfoot) > tr > .tws-frozen-cell:first-child::before {
+  content: '';
+  position: absolute;
+  inset-block: calc(-1 * var(--table-border-width, 1px));
+  right: 100%;
+  width: calc(var(--table-drag-handle-size, 16px) + var(--table-border-width, 1px));
+  background-color: var(--background-primary, #fff);
+  pointer-events: none;
 }
 
 /* collapsed 边框会随自然布局滚走，在冻结单元格上补绘。 */

@@ -1,6 +1,6 @@
 {
   "name": "table-width-scroll",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Obsidian 表格列宽调整、冻结列与正文宽度内的横向滚动",
   "type": "module",
   "main": "main.js",

@@ -76,7 +76,11 @@ export function updateFrozen(table: HTMLTableElement): void {
   } finally {
     table.classList.remove('tws-measuring-freeze');
   }
-  const visible = meta.wrapper.clientWidth;
+  // clientWidth 包含 padding；行手柄空间不能算作可供冻结列使用的宽度。
+  const style = table.ownerDocument.defaultView?.getComputedStyle(meta.wrapper);
+  const padding = (Number.parseFloat(style?.paddingLeft ?? '') || 0) +
+    (Number.parseFloat(style?.paddingRight ?? '') || 0);
+  const visible = Math.max(0, meta.wrapper.clientWidth - padding);
   const budget = visible - Math.max(48, visible * 0.2);
   const requested = Math.min(meta.options.count, Math.max(0, headers.length - 1));
   let count = 0;

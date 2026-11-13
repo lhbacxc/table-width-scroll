@@ -2,6 +2,7 @@
 :root {
   --file-line-width: 560px; --size-4-4: 16px; --table-column-min-width: 6ch;
   --size-2-2: 4px; --size-4-2: 8px; --interactive-accent: #526bd7;
+  --table-selection-border-width: 2px;
   --background-secondary: #eceef2; --scrollbar-thumb-bg: #7b849699;
   font: 16px Arial, sans-serif;
 }
@@ -23,7 +24,7 @@ th { background: #e9edf4; text-align: left; }
 
 /* 原生六点手柄的位置取自本机 Obsidian 1.15.0，测试选择区域不能被遮挡。 */
 .table-col-drag-handle, .table-row-drag-handle { position: absolute; cursor: grab; opacity: 0; background: #ddd; }
-.table-col-drag-handle { bottom: 100%; width: 100%; height: 14px; }
-.table-row-drag-handle { top: 0; right: 100%; width: 14px; height: 100%; }
+.table-col-drag-handle { inset-block-end: 100%; width: 100%; height: calc(var(--table-drag-handle-size) - var(--table-selection-border-width)); }
+.table-row-drag-handle { top: 0; inset-inline-end: 100%; width: calc(var(--table-drag-handle-size) - var(--table-selection-border-width)); height: 100%; }
 .table-col-drag-handle:hover, .table-row-drag-handle:hover { opacity: 1; }
 .table-col-drag-handle::before, .table-row-drag-handle::before { content: '⠿'; display: block; text-align: center; }
